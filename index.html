@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset="utf-8" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.0.0/d3.min.js"></script>
+  <script src="https://raw.githack.com/karpathy/tsnejs/master/tsne.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="chart"></div>
+  <script>
+    const width = 960,
+      height = 500,
+      margin = 40,
+      scalepop = d3.scaleSqrt().domain([0, 100000]).range([0.2, 24]),
+      scalecountry = d3.scaleOrdinal(d3.schemeCategory20b);
+    // centerx = d3
+    //   .scaleLinear()
+    //   .range([
+    //     width / 2 - height / 2 + margin,
+    //     width / 2 + height / 2 - margin,
+    //   ]);
+    // centery = d3.scaleLinear().range([margin, height - margin]);
+
+    Promise.all([d3.csv("umap.csv"), d3.csv("geneexpression.csv")]).then(
+      function (files) {
+        const genes = files[1].map((ob) => {
+          const newob = {};
+          for (const [key, value] of Object.entries(ob)) {
+            newob[key] = parseFloat(value);
+          }
+          return newob;
+        });
+        const umap = files[0].map((ob, idx) => {
+          return { ...ob, ...genes[idx] };
+        });
+        // console.log(genes);
+        // const data = cities
+        //   .sort((a, b) => d3.descending(+a[2015], +b[2015]))
+        //   .map((d, i) => [
+        //     +d.Longitude,
+        //     +d.Latitude,
+        //     d["Urban Agglomeration"],
+        //     +d[2015],
+        //     +d["Country Code"],
+        //   ])
+        //   .slice(0, 800);
+        console.log(umap);
+        const max_x = Math.max(...umap.map((p) => p.x));
+        const min_x = Math.min(...umap.map((p) => p.x));
+        const max_y = Math.max(...umap.map((p) => p.y));
+        const min_y = Math.min(...umap.map((p) => p.y));
+        console.log({ max_x, max_y, min_x, min_y });
+        const scale_x = width / (max_x - min_x);
+        const scale_y = height / (max_y - min_y);
+
+        const canvas = d3
+          .select("body")
+          .append("canvas")
+          .attr("width", width)
+          .attr("height", height);
+
+        // const model = new tsnejs.tSNE({
+        //   dim: 2,
+        //   perplexity: 30,
+        // });
+
+        // initialize data with pairwise distances
+        // const dists = data.map((d) => data.map((e) => d3.geoDistance(d, e)));
+        // model.initDataDist(dists);
+
+        // const forcetsne = d3
+        //   .forceSimulation(
+        //     data.map((d) => ((d.x = width / 2), (d.y = height / 2), d))
+        //   )
+        //   .alphaDecay(0.005)
+        //   .alpha(0.1)
+        //   .force("tsne", function (alpha) {
+        //     // every time you call this, solution gets better
+        //     model.step();
+
+        //     // Y is an array of 2-D points that you can plot
+        //     let pos = model.getSolution();
+
+        //     centerx.domain(d3.extent(pos.map((d) => d[0])));
+        //     centery.domain(d3.extent(pos.map((d) => d[1])));
+
+        //     data.forEach((d, i) => {
+        //       d.x += alpha * (centerx(pos[i][0]) - d.x);
+        //       d.y += alpha * (centery(pos[i][1]) - d.y);
+        //     });
+        //   })
+        //   .force(
+        //     "collide",
+        //     d3.forceCollide().radius((d) => 1.5 + scalepop(d[3]))
+        //   )
+        //   .on("tick", function () {
+        //     let nodes = data.map((d, i) => {
+        //       return {
+        //         x: d.x,
+        //         y: d.y,
+        //         r: scalepop(d[3]),
+        //         color: scalecountry(d[4]),
+        //       };
+        //     });
+
+        //     draw(canvas, nodes);
+        //   });
+        // centerx = width / 2 - height / 2 + margin;
+
+        const svg = d3
+          .select("#chart")
+          .append("svg")
+          .attr("width", width - 100)
+          .attr("height", height);
+
+        var tooltip = d3
+          .select("#chart")
+          .append("div")
+          .style("opacity", 0)
+          .attr("class", "tooltip")
+          .style("background-color", "black")
+          .style("border-radius", "5px")
+          .style("padding", "10px")
+          .style("color", "white");
+
+        function draw(canvas, nodes) {
+          let context = canvas.node().getContext("2d");
+          context.clearRect(0, 0, width, width);
+
+          // for (var i = 0, n = nodes.length; i < n; ++i) {
+          //   var node = nodes[i];
+
+          //   const x = (node.x - min_x) * scale_x;
+          //   const y = (node.y - min_y) * scale_y;
+          //   console.log(x, y);
+          //   context.beginPath();
+          //   context.moveTo(node.x, node.y);
+
+          //   context.arc(x, y, 2, 0, 2 * Math.PI);
+          //   context.lineWidth = 0.5;
+          //   context.fillStyle = "red";
+          //   context.fill();
+          // }
+
+          function x(node) {
+            return (node.x - min_x) * scale_x;
+          }
+          function y(node) {
+            return (node.y - min_y) * scale_y;
+          }
+          function showTooltip(d) {
+            console.log(d);
+            tooltip.transition().duration(200);
+            tooltip
+              .style("opacity", 1)
+              .html("Data: " + d.CST3)
+              .style("left", d3.mouse(this)[0] + 30 + "px")
+              .style("top", d3.mouse(this)[1] + 30 + "px");
+          }
+
+          var hideTooltip = function (d) {
+            tooltip.transition().duration(200).style("opacity", 0);
+          };
+          console.log(d3.extent(umap, (d) => d.NKG7));
+          console.log(d3.extent(umap, (d) => d.CST3));
+
+          c = d3
+            .scaleLinear()
+            .domain(d3.extent(umap, (d) => d.PPBP))
+            .range([
+              "#5E4FA2",
+              "#3288BD",
+              "#66C2A5",
+              "#ABDDA4",
+              "#E6F598",
+              "#FFFFBF",
+              "#FEE08B",
+              "#FDAE61",
+              "#F46D43",
+              "#D53E4F",
+              "#9E0142",
+            ]);
+          // Add dots
+          svg
+            .append("g")
+            .selectAll("dot")
+            .data(umap)
+            .enter()
+            .append("circle")
+            // .attr("class", function(d) { return "bubbles " + d.continent })
+            .attr("cx", function (d) {
+              return x(d);
+            })
+            .attr("cy", function (d) {
+              return y(d);
+            })
+            .attr("r", function (d) {
+              return 1;
+            })
+            .style("fill", function (d) {
+              return c(d["PPBP"]);
+            })
+            .on("mouseover", showTooltip)
+            .on("mouseleave", hideTooltip);
+        }
+        draw(canvas, umap);
+        // draw(canvas, [{ x: 5, y: 5 }]);
+      }
+    );
+  </script>
+</body>
