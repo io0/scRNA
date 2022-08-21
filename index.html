@@ -13,6 +13,7 @@
       right: 0;
       bottom: 0;
       left: 0;
+      font-family: sans-serif;
     }
   </style>
 </head>
@@ -130,15 +131,15 @@
           .append("div")
           .style("opacity", 0)
           .attr("class", "tooltip")
-          .style("background-color", "black")
+          .style("background-color", "#eee")
           .style("border-radius", "5px")
           .style("padding", "10px")
-          .style("color", "white");
+          .style("color", "black");
 
-        function highlight(d) {
-          console.log(d);
-          svg.selectAll(".bubbles")("fill", function (d) {
-            return c(d["PPBP"]);
+        function highlight(geneName) {
+          console.log(geneName);
+          svg.selectAll(".bubbles").style("fill", function (d) {
+            return c(d[geneName]);
           });
         }
         function draw(canvas, nodes) {
@@ -173,8 +174,10 @@
             // });
             tooltip.transition().duration(200);
             tooltip
-              .style("opacity", 1)
-              .html("Data: " + d.CST3)
+              .style("opacity", 0.8)
+              .html(
+                `<i><b>Gene Expression</i></b><br></br><b>CST3:</b> ${d.CST3} <br></br>NKG7: ${d.NKG7}<br></br>PPBP: ${d.PPBP}`
+              )
               .style("left", d3.mouse(this)[0] + 30 + "px")
               .style("top", d3.mouse(this)[1] + 30 + "px");
           }
@@ -242,7 +245,7 @@
               return 2;
             })
             .style("fill", function (d) {
-              return c(d["PPBP"]);
+              return c(d["CST3"]);
             })
             .on("mouseover", showTooltip)
             .on("mouseleave", hideTooltip);
