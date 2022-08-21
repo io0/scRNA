@@ -135,6 +135,12 @@
           .style("padding", "10px")
           .style("color", "white");
 
+        function highlight(d) {
+          console.log(d);
+          svg.selectAll(".bubbles")("fill", function (d) {
+            return c(d["PPBP"]);
+          });
+        }
         function draw(canvas, nodes) {
           let context = canvas.node().getContext("2d");
           context.clearRect(0, 0, width, width);
@@ -162,6 +168,9 @@
           }
           function showTooltip(d) {
             console.log(d);
+            // d.attr("r", function (d) {
+            //   return 4;
+            // });
             tooltip.transition().duration(200);
             tooltip
               .style("opacity", 1)
@@ -172,13 +181,33 @@
 
           var hideTooltip = function (d) {
             tooltip.transition().duration(200).style("opacity", 0);
+            // d.attr("r", function (d) {
+            //   return 1;
+            // });
           };
           console.log(d3.extent(umap, (d) => d.NKG7));
           console.log(d3.extent(umap, (d) => d.CST3));
+          console.log(d3.extent(umap, (d) => d.PPBP));
+          // let mean =
+          //   umap.map(
+          //     function (d) {
+          //       return (this.acc += d.PPBP);
+          //     },
+          //     { acc: 0 }
+          //   ) / umap.length;
+          // let stdsq =
+          //   umap.map(
+          //     function (d) {
+          //       return (this.acc += (d.PPBP - mean) * (d.PPBP - mean));
+          //     },
+          //     { acc: 0 }
+          //   ) / umap.length;
+          // console.log();
+          // let std = Math.sqrt(std);
 
           c = d3
             .scaleLinear()
-            .domain(d3.extent(umap, (d) => d.PPBP))
+            .domain([-1, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4])
             .range([
               "#5E4FA2",
               "#3288BD",
@@ -192,6 +221,7 @@
               "#D53E4F",
               "#9E0142",
             ]);
+
           // Add dots
           svg
             .append("g")
@@ -199,7 +229,9 @@
             .data(umap)
             .enter()
             .append("circle")
-            // .attr("class", function(d) { return "bubbles " + d.continent })
+            .attr("class", function (d) {
+              return "bubbles";
+            })
             .attr("cx", function (d) {
               return x(d);
             })
@@ -207,7 +239,7 @@
               return y(d);
             })
             .attr("r", function (d) {
-              return 1;
+              return 2;
             })
             .style("fill", function (d) {
               return c(d["PPBP"]);
@@ -216,6 +248,26 @@
             .on("mouseleave", hideTooltip);
         }
         draw(canvas, umap);
+
+        var size = 20;
+        // Add labels beside legend dots
+        svg
+          .selectAll("mylabels")
+          .data(["CST3", "NKG7", "PPBP"])
+          .enter()
+          .append("text")
+          .attr("x", width - 200 + size * 0.8)
+          .attr("y", function (d, i) {
+            return i * (size + 5) + size / 2;
+          }) // 100 is where the first dot appears. 25 is the distance between dots
+          // .style("fill", function(d){ return myColor(d)})
+          .text(function (d) {
+            return d;
+          })
+          .attr("text-anchor", "left")
+          .style("alignment-baseline", "middle")
+          .on("mouseover", highlight);
+        // .on("mouseleave", noHighlight)
         // draw(canvas, [{ x: 5, y: 5 }]);
       }
     );
